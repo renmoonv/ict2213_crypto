@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="card">
+    <h2>Home</h2>
+    <p><b>Logged in:</b> {{ "Yes" if logged_in else "No" }}</p>
+    <p><b>User:</b> {{ username or "-" }}</p>
+    <p><b>Private key in memory:</b> {{ "Yes" if has_privkey else "No" }}</p>
+
+    {% if logged_in %}
+      <form method="post" action="{{ url_for('logout') }}">
+        <button type="submit">Logout</button>
+      </form>
+    {% else %}
+      <p>
+        <a href="{{ url_for('register') }}">Register</a> or
+        <a href="{{ url_for('login') }}">Login</a>
+      </p>
+    {% endif %}
+  </div>
+{% endblock %}
