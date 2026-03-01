@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>{{ title or "Client Auth UI" }}</title>
+    <style>
+      body { font-family: Arial, sans-serif; max-width: 520px; margin: 40px auto; }
+      .card { border: 1px solid #ddd; padding: 16px; border-radius: 10px; }
+      .row { margin: 10px 0; }
+      input { width: 100%; padding: 10px; box-sizing: border-box; }
+      button { padding: 10px 14px; }
+      .msg { padding: 10px; border-radius: 8px; margin: 8px 0; }
+      .success { background: #e8fff0; border: 1px solid #b7f0c7; }
+      .error { background: #ffecec; border: 1px solid #f3b5b5; }
+      .warning { background: #fff7e6; border: 1px solid #ffd28a; }
+      a { text-decoration: none; }
+      .nav a { margin-right: 10px; }
+    </style>
+  </head>
+  <body>
+    <div class="nav">
+      <a href="{{ url_for('home') }}">Home</a>
+      <a href="{{ url_for('register') }}">Register</a>
+      <a href="{{ url_for('login') }}">Login</a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="msg {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </body>
+</html>
