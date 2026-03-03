@@ -3,6 +3,7 @@ from nacl.public import PrivateKey
 from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 
+
 def generate_keypair():
     priv = PrivateKey.generate()
     pub = priv.public_key

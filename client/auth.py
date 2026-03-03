@@ -14,15 +14,17 @@ def register(username, password):
 
     nonce, encrypted_priv = encrypt_private_key(priv, local_key)
 
-    # Always save locally first
-    save_keystore(salt, nonce, encrypted_priv, kdf_params)
+    # Save per-user keystore
+    save_keystore(username, salt, nonce, encrypted_priv, kdf_params)
 
     ok = register_api(username, password, pub)
+
     if ok:
-        print("Registration OK (local keystore saved).")
-        return True
-    print("Server register failed, but local keystore saved.")
-    return False
+        print("Registration OK.")
+    else:
+        print("Server not reachable, but local keystore saved.")
+
+    return ok
 
 def login(username, password):
     global _current_private_key
@@ -32,9 +34,9 @@ def login(username, password):
         print("Login failed (server).")
         return False
 
-    bundle = load_keystore()
+    bundle = load_keystore(username)
     if not bundle:
-        print("No keystore.json found. Register first.")
+        print("No keystore found for this user.")
         return False
 
     salt, nonce, encrypted_priv, kdf_params = bundle
@@ -43,13 +45,12 @@ def login(username, password):
     try:
         priv = decrypt_private_key(encrypted_priv, nonce, local_key)
         _current_private_key = priv
-        print("Login OK (private key decrypted into memory).")
+        print("Login OK.")
         return True
     except Exception:
-        print("Login failed: could not decrypt private key (wrong password or tampered keystore).")
-        _current_private_key = None
+        print("Wrong password or corrupted keystore.")
         return False
-
+    
 def logout():
     global _current_private_key
     _current_private_key = None

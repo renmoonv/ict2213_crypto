@@ -16,6 +16,7 @@ venv/
 
 # Local private key storage
 keystore.json
+keystores/
 
 # VSCode
 .vscode/
