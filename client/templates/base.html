@@ -4,7 +4,8 @@
     <meta charset="utf-8" />
     <title>{{ title or "Client Auth UI" }}</title>
     <style>
-      body { font-family: Arial, sans-serif; max-width: 520px; margin: 40px auto; }
+      body { font-family: Arial, sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+      .container { max-width: 520px; margin: 40px auto; padding: 0 16px; }
       .card { border: 1px solid #ddd; padding: 16px; border-radius: 10px; }
       .row { margin: 10px 0; }
       input { width: 100%; padding: 10px; box-sizing: border-box; }
@@ -14,7 +15,26 @@
       .error { background: #ffecec; border: 1px solid #f3b5b5; }
       .warning { background: #fff7e6; border: 1px solid #ffd28a; }
       a { text-decoration: none; }
-      .nav a { margin-right: 10px; }
+
+      /* Navbar styling: simple background and updated font */
+      .nav {
+        background: #2c3e50;
+        padding: 12px 20px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        width: 100%;
+        box-sizing: border-box;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+      .nav a {
+        margin-right: 12px;
+        color: #ffffff;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-weight: 600;
+        font-size: 15px;
+      }
+      .nav a:hover { text-decoration: underline; opacity: 0.95; }
     </style>
   </head>
   <body>
@@ -24,14 +44,16 @@
       <a href="{{ url_for('login') }}">Login</a>
     </div>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="msg {{ category }}">{{ message }}</div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
+    <div class="container">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="msg {{ category }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
 
-    {% block content %}{% endblock %}
+      {% block content %}{% endblock %}
+    </div>
   </body>
 </html>

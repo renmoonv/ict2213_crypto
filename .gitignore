@@ -16,6 +16,7 @@ venv/
 
 # Local private key storage
 keystore.json
+keystores/
 
 # VSCode
 .vscode/
@@ -23,3 +24,5 @@ keystore.json
 # OS junk
 .DS_Store
 Thumbs.db
+client/__pycache__/auth.cpython-310.pyc
+client/__pycache__/keystore.cpython-310.pyc

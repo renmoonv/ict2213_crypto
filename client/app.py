@@ -6,13 +6,13 @@ app.secret_key = "dev-only-change-me"  # for demo; change before submission if r
 
 
 @app.get("/")
-def home():
+def landingpage():
     logged_in = session.get("logged_in", False)
     username = session.get("username")
     has_privkey = get_private_key_bytes() is not None
-    return render_template("home.html", logged_in=logged_in, username=username, has_privkey=has_privkey)
+    return render_template("landingpage.html", logged_in=logged_in, username=username, has_privkey=has_privkey)
 
-
+# register
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
@@ -34,36 +34,52 @@ def register():
 
     return render_template("register.html")
 
-
+# login
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        username = request.form.get("username", "").strip()
-        password = request.form.get("password", "")
+        username = request.form.get("username")
+        password = request.form.get("password")
 
-        if not username or not password:
-            flash("Username and password required.", "error")
-            return redirect(url_for("login"))
-
-        ok = do_login(username, password)
-        if ok:
+        if do_login(username, password):
+            # mark session as logged in so protected pages work
             session["logged_in"] = True
             session["username"] = username
-            flash("Login successful. Private key decrypted into memory.", "success")
+            flash("Login successful.", "success")
             return redirect(url_for("home"))
         else:
-            flash("Login failed. Wrong password, missing keystore, or server not reachable.", "error")
-            return redirect(url_for("login"))
+            flash("Login failed.", "error")
 
-    return render_template("login.html")
+    return render_template(
+        "login.html",
+        logged_in=get_private_key_bytes() is not None
+    )
 
-
+# Logout
 @app.post("/logout")
 def logout():
     do_logout()
     session.clear()
     flash("Logged out. Private key cleared from memory.", "success")
-    return redirect(url_for("home"))
+    return redirect(url_for("landingpage"))
+
+# Home page
+@app.get("/home")
+def home():
+    if not session.get("logged_in"):
+        flash("Please login first.", "error")
+        return redirect(url_for("login"))
+
+    username = session.get("username")
+    has_privkey = get_private_key_bytes() is not None
+
+    return render_template(
+        "home.html",
+        username=username,
+        has_privkey=has_privkey
+    )
+
+
 
 
 if __name__ == "__main__":
