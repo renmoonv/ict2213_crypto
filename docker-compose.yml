@@ -1,0 +1,31 @@
+version: "3.8"
+
+services:
+  db:
+    image: mariadb:11.8.6
+    container_name: applied_crypto_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: cryptopass
+      MYSQL_DATABASE: applied_crypto
+      MYSQL_USER: crypto_user
+      MYSQL_PASSWORD: cryptopass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./server/db_init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-pcryptopass"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_net
+
+volumes:
+  mariadb_data:
+
+networks:
+  app_net:
+    driver: bridge
