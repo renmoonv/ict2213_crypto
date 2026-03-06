@@ -41,3 +41,9 @@ docker exec -it applied_crypto_db mariadb -u root -p
 (password: cryptopass)
 ---------------------------------------------------------------------------------------------------------------
 
+!! Any updates to db_init/init.sql , models.py, app.py :
+docker-compose down
+docker volume rm ict2213_crypto_mariadb_data
+docker-compose up -d
+
+- To get MariaDB to re-run init.sql, must remove the active volume. Else MariaDB keeps the existing data.
