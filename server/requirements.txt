@@ -1,3 +1,4 @@
 Flask
 Flask-SQLAlchemy
 PyMySQL
+argon2-cffi
