@@ -22,14 +22,6 @@ docker run hello-world
 - to start docker: cd to your project directory in wsl terminal
 docker-compose up -d
 
-suppose output:
-huicheng@hchq:/mnt/c/Users/huich/Documents/Y2_trisem_2/Applied_Crypto/ict2213_crypto$ docker-compose up -d
-Creating volume "ict2213_crypto_mariadb_data" with default driver
-Creating applied_crypto_db ... done
-huicheng@hchq:/mnt/c/Users/huich/Documents/Y2_trisem_2/Applied_Crypto/ict2213_crypto$ docker ps
-CONTAINER ID   IMAGE            COMMAND                  CREATED          STATUS                             PORTS                                         NAMES
-7f6b92a7d99e   mariadb:11.8.6   "docker-entrypoint.s…"   15 seconds ago   Up 14 seconds (health: starting)   0.0.0.0:3306->3306/tcp, [::]:3306->3306/tcp   applied_crypto_db
-
 (health: starting) -> MariaDB is starting. Wait until (health: healthy)
 ---------------------------------------------------------------------------------------------------------------
 4. Connect to MariaDB
