@@ -44,7 +44,10 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
+    gap: 12px;
   }
+
+  .topbar form { margin: 0; }
 
   .btn {
     padding: 8px 14px;
@@ -57,6 +60,38 @@
 
   .btn:hover {
     background: #1669c1;
+  }
+
+  .btn-danger {
+    background: #d93025;
+  }
+
+  .btn-danger:hover {
+    background: #b42318;
+  }
+
+  .upload-panel,
+  .files-panel {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .upload-form {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .upload-form input[type="file"] {
+    background: white;
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    padding: 10px;
+    flex: 1 1 260px;
   }
 
   .files-grid {
@@ -82,6 +117,28 @@
     font-size: 40px;
     margin-bottom: 10px;
   }
+
+  .file-name {
+    margin-bottom: 10px;
+    word-break: break-word;
+  }
+
+  .file-meta {
+    color: #666;
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+
+  .file-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .file-actions form {
+    margin: 0;
+  }
 </style>
 
 <div class="layout">
@@ -100,7 +157,7 @@
     <div class="topbar">
       <div>
         <h2>Welcome, {{ username }}</h2>
-        <!-- <small>Private key loaded: {{ "Yes" if has_privkey else "No" }}</small> -->
+        <small>Private key loaded: {{ "Yes" if has_privkey else "No" }}</small>
       </div>
 
       <form method="post" action="{{ url_for('logout') }}">
@@ -108,24 +165,39 @@
       </form>
     </div>
 
-    <button class="btn" style="margin-bottom:20px;">+ New File</button>
+    <div class="upload-panel">
+      <h3>Upload File</h3>
+      <p>Select a file to encrypt in the client before storing ciphertext on the server.</p>
 
-    <div class="files-grid">
-      <!-- Dummy Files -->
-      <div class="file-card">
-        <div class="file-icon">📄</div>
-        <div>Report.pdf</div>
-      </div>
+      <form method="post" action="{{ url_for('upload_file') }}" enctype="multipart/form-data" class="upload-form">
+        <input type="file" name="file" required />
+        <button type="submit" class="btn">Upload</button>
+      </form>
+    </div>
 
-      <div class="file-card">
-        <div class="file-icon">📁</div>
-        <div>Project Docs</div>
-      </div>
-
-      <div class="file-card">
-        <div class="file-icon">📊</div>
-        <div>Budget.xlsx</div>
-      </div>
+    <div class="files-panel">
+      <h3>Your Files</h3>
+      {% if uploaded_files %}
+        <div class="files-grid">
+          {% for item in uploaded_files %}
+            <div class="file-card">
+              <div class="file-icon">📄</div>
+              <div class="file-name">{{ item.filename }}</div>
+              <div class="file-meta">ID: {{ item.file_id }}</div>
+              <div class="file-actions">
+                <a href="{{ url_for('download_file', file_id=item.file_id) }}" class="btn">Download</a>
+                {% if item.is_owner %}
+                  <form method="post" action="{{ url_for('remove_file', file_id=item.file_id) }}">
+                    <button type="submit" class="btn btn-danger">Remove</button>
+                  </form>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p>No server-stored files found.</p>
+      {% endif %}
     </div>
 
   </div>

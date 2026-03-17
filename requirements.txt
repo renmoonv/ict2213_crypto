@@ -1,0 +1,7 @@
+Flask
+Flask-SQLAlchemy
+PyMySQL
+argon2-cffi
+requests
+pynacl
+cryptography
