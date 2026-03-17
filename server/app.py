@@ -296,6 +296,12 @@ def create_app():
         except ValueError as e:
             return jsonify({"error": str(e)}), 400
 
+        if len(nonce_iv) != 12:
+            return jsonify({"error": "nonce_iv must be exactly 12 bytes for AES-GCM"}), 400
+
+        if len(auth_tag) != 16:
+            return jsonify({"error": "auth_tag must be exactly 16 bytes for AES-GCM"}), 400
+
         if not permissions:
             return jsonify({"error": "permissions list is required"}), 400
 
@@ -449,6 +455,12 @@ def create_app():
             file_obj.auth_tag   = b64decode_field(auth_tag_b64,   "auth_tag")
         except ValueError as e:
             return jsonify({"error": str(e)}), 400
+
+        if len(file_obj.nonce_iv) != 12:
+            return jsonify({"error": "nonce_iv must be exactly 12 bytes for AES-GCM"}), 400
+
+        if len(file_obj.auth_tag) != 16:
+            return jsonify({"error": "auth_tag must be exactly 16 bytes for AES-GCM"}), 400
 
         db.session.commit()
         return jsonify({"message": "File updated"}), 200

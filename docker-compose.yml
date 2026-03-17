@@ -16,7 +16,7 @@ services:
       - mariadb_data:/var/lib/mysql
       - ./server/db_init:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-pcryptopass"]
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-uroot", "-pcryptopass"]
       interval: 10s
       timeout: 5s
       retries: 5
