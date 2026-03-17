@@ -19,60 +19,6 @@ def landingpage():
     logged_in = session.get("logged_in", False)
     return render_template("landingpage.html", logged_in=logged_in)
 
-# Download and decrypt file route
-@app.route("/download/<int:file_id>")
-def download_file(file_id):
-    if not session.get("logged_in"):
-        flash("Please login first.", "error")
-        return redirect(url_for("login"))
-
-    auth_context = get_auth_context()
-    if not auth_context:
-        flash("Authenticated session not available. Please login again.", "error")
-        return redirect(url_for("login"))
-
-    result = download_file_api(auth_context["username"], auth_context["password"], file_id)
-    if not result:
-        flash("Download failed. File not found or access denied.", "error")
-        return redirect(url_for("home"))
-
-    import base64
-    ciphertext = base64.b64decode(result["ciphertext"])
-    nonce_iv = base64.b64decode(result["nonce_iv"])
-    auth_tag = base64.b64decode(result["auth_tag"])
-    wrapped_fek = base64.b64decode(result["wrapped_fek"])
-    filename = result["filename"]
-
-    fek = unwrap_file_encryption_key(wrapped_fek, get_private_key_bytes())
-    plaintext = decrypt_file_bytes(ciphertext, nonce_iv, auth_tag, fek)
-
-    return send_file(
-        io.BytesIO(plaintext),
-        as_attachment=True,
-        download_name=filename,
-        mimetype="application/octet-stream",
-    )
-
-
-@app.route("/remove/<int:file_id>", methods=["POST"])
-def remove_file(file_id):
-    if not session.get("logged_in"):
-        flash("Please login first.", "error")
-        return redirect(url_for("login"))
-
-    auth_context = get_auth_context()
-    if not auth_context:
-        flash("Authenticated session not available. Please login again.", "error")
-        return redirect(url_for("login"))
-
-    result = delete_file_api(auth_context["username"], auth_context["password"], file_id)
-    if not result:
-        flash("Remove failed. Only the owner can delete a file, and the API server must be available.", "error")
-        return redirect(url_for("home"))
-
-    flash("File removed successfully.", "success")
-    return redirect(url_for("home"))
-
 @app.route("/home")
 def home():
     if not session.get("logged_in"):
@@ -195,7 +141,59 @@ def upload_file():
         flash(f"Encrypted '{safe_name}' on the client and stored ciphertext on the server.", "success")
         return redirect(url_for("home"))
 
+# Download and decrypt file route
+@app.route("/download/<int:file_id>")
+def download_file(file_id):
+    if not session.get("logged_in"):
+        flash("Please login first.", "error")
+        return redirect(url_for("login"))
 
+    auth_context = get_auth_context()
+    if not auth_context:
+        flash("Authenticated session not available. Please login again.", "error")
+        return redirect(url_for("login"))
+
+    result = download_file_api(auth_context["username"], auth_context["password"], file_id)
+    if not result:
+        flash("Download failed. File not found or access denied.", "error")
+        return redirect(url_for("home"))
+
+    import base64
+    ciphertext = base64.b64decode(result["ciphertext"])
+    nonce_iv = base64.b64decode(result["nonce_iv"])
+    auth_tag = base64.b64decode(result["auth_tag"])
+    wrapped_fek = base64.b64decode(result["wrapped_fek"])
+    filename = result["filename"]
+
+    fek = unwrap_file_encryption_key(wrapped_fek, get_private_key_bytes())
+    plaintext = decrypt_file_bytes(ciphertext, nonce_iv, auth_tag, fek)
+
+    return send_file(
+        io.BytesIO(plaintext),
+        as_attachment=True,
+        download_name=filename,
+        mimetype="application/octet-stream",
+    )
+
+
+@app.route("/remove/<int:file_id>", methods=["POST"])
+def remove_file(file_id):
+    if not session.get("logged_in"):
+        flash("Please login first.", "error")
+        return redirect(url_for("login"))
+
+    auth_context = get_auth_context()
+    if not auth_context:
+        flash("Authenticated session not available. Please login again.", "error")
+        return redirect(url_for("login"))
+
+    result = delete_file_api(auth_context["username"], auth_context["password"], file_id)
+    if not result:
+        flash("Remove failed. Only the owner can delete a file, and the API server must be available.", "error")
+        return redirect(url_for("home"))
+
+    flash("File removed successfully.", "success")
+    return redirect(url_for("home"))
 
 
 if __name__ == "__main__":
