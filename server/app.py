@@ -3,10 +3,36 @@ from config import Config
 from models import db, User, File, FilePermission, WrappedKey
 from functools import wraps
 import base64
+import os
+import time
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError, VerificationError, InvalidHashError
+from sqlalchemy import text
 
 ph = PasswordHasher()
+
+
+def wait_for_database(app):
+    retries = int(os.getenv("DB_CONNECT_RETRIES", "30"))
+    delay_seconds = float(os.getenv("DB_CONNECT_DELAY", "1"))
+
+    with app.app_context():
+        for attempt in range(1, retries + 1):
+            try:
+                db.session.execute(text("SELECT 1"))
+                db.session.commit()
+                print(f"Database connection ready (attempt {attempt}/{retries}).")
+                return
+            except Exception as exc:
+                db.session.rollback()
+                if attempt == retries:
+                    raise RuntimeError(
+                        f"Database not reachable after {retries} attempts."
+                    ) from exc
+                print(
+                    f"Waiting for database (attempt {attempt}/{retries}): {exc}"
+                )
+                time.sleep(delay_seconds)
 
 
 def create_app():
@@ -14,6 +40,7 @@ def create_app():
     app.config.from_object(Config)
 
     db.init_app(app)
+    wait_for_database(app)
     # ---------- AUTH HELPER ----------
 
     def require_auth(f):
@@ -70,6 +97,10 @@ def create_app():
 
     def can_write(permission):
         return permission is not None and permission.permission_type == "write"
+
+    @app.route("/api/health", methods=["GET"])
+    def health():
+        return jsonify({"status": "ok"}), 200
 
     # ---------- AUTH ENDPOINTS ----------
 

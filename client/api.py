@@ -1,10 +1,13 @@
 import base64
 import os
+import time
 
 import requests
 
 BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:5000")
 OFFLINE_DEV = os.getenv("OFFLINE_DEV", "false").strip().lower() in {"1", "true", "yes"}
+REQUEST_RETRIES = int(os.getenv("API_REQUEST_RETRIES", "5"))
+RETRY_DELAY_SECONDS = float(os.getenv("API_RETRY_DELAY_SECONDS", "1"))
 
 
 def _auth_headers(username, password):
@@ -18,18 +21,28 @@ def _request(method, path, **kwargs):
     if OFFLINE_DEV:
         return None
 
-    try:
-        response = requests.request(
-            method,
-            f"{BASE_URL}{path}",
-            verify=False,
-            timeout=10,
-            **kwargs,
-        )
-        if response.ok:
-            return response.json()
-    except requests.RequestException:
-        return None
+    for attempt in range(1, REQUEST_RETRIES + 1):
+        try:
+            response = requests.request(
+                method,
+                f"{BASE_URL}{path}",
+                verify=False,
+                timeout=10,
+                **kwargs,
+            )
+            if response.ok:
+                return response.json()
+
+            # Retry transient server startup failures, return None for final failure.
+            if response.status_code >= 500 and attempt < REQUEST_RETRIES:
+                time.sleep(RETRY_DELAY_SECONDS)
+                continue
+            return None
+        except requests.RequestException:
+            if attempt < REQUEST_RETRIES:
+                time.sleep(RETRY_DELAY_SECONDS)
+                continue
+            return None
 
     return None
 

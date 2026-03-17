@@ -1,6 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file
 from werkzeug.utils import secure_filename
 import io
+import os
+import sys
+import time
+import subprocess
+import requests
 from api import list_files_api, upload_file_api, download_file_api, delete_file_api
 from auth import (
     register as do_register,
@@ -13,6 +18,46 @@ from crypto_utils import encrypt_file_bytes, wrap_file_encryption_key, public_ke
 
 app = Flask(__name__)
 app.secret_key = "dev-only-change-me"  # for demo; change before submission if required
+
+
+def _api_health_check():
+    try:
+        response = requests.get("http://127.0.0.1:5000/api/health", timeout=1)
+        return response.status_code == 200
+    except requests.RequestException:
+        return False
+
+
+def _ensure_backend_running():
+    # Enabled by default so running client app also brings up API server.
+    autostart_disabled = os.getenv("CLIENT_AUTOSTART_API", "true").strip().lower() in {"0", "false", "no"}
+    if autostart_disabled:
+        return
+
+    if _api_health_check():
+        return
+
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    server_dir = os.path.join(project_root, "server")
+    server_app = os.path.join(server_dir, "app.py")
+
+    kwargs = {
+        "cwd": server_dir,
+        "stdout": subprocess.DEVNULL,
+        "stderr": subprocess.DEVNULL,
+        "env": {**os.environ, "FLASK_DEBUG": "0"},
+    }
+    if os.name == "nt":
+        kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
+
+    subprocess.Popen([sys.executable, server_app], **kwargs)
+
+    for _ in range(20):
+        if _api_health_check():
+            return
+        time.sleep(0.5)
+
+    print("Backend auto-start attempted, but API health is still not ready.")
 
 @app.get("/")
 def landingpage():
@@ -197,6 +242,7 @@ def remove_file(file_id):
 
 
 if __name__ == "__main__":
+    _ensure_backend_running()
     # UI server (this is your client UI). Keep it HTTP locally.
     # TLS for your project is for the *API server / reverse proxy*, not necessarily this UI.
     app.run(host="127.0.0.1", port=5001, debug=True)
