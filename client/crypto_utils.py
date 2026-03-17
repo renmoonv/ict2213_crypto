@@ -1,3 +1,8 @@
+import os
+from nacl.public import PrivateKey, PublicKey, SealedBox
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM, ChaCha20Poly1305
+from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
+
 def unwrap_file_encryption_key(wrapped_fek: bytes, private_key_bytes: bytes) -> bytes:
     sealed_box = SealedBox(PrivateKey(private_key_bytes))
     return sealed_box.decrypt(wrapped_fek)
@@ -6,11 +11,6 @@ def decrypt_file_bytes(ciphertext: bytes, nonce_iv: bytes, auth_tag: bytes, fek:
     aesgcm = AESGCM(fek)
     encrypted = ciphertext + auth_tag
     return aesgcm.decrypt(nonce_iv, encrypted, None)
-import os
-from nacl.public import PrivateKey, PublicKey, SealedBox
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM, ChaCha20Poly1305
-from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
-
 
 def generate_keypair():
     priv = PrivateKey.generate()

@@ -1,9 +1,3 @@
-def download_file_api(username, password, file_id):
-    return _request(
-        "GET",
-        f"/api/files/{file_id}",
-        headers=_auth_headers(username, password),
-    )
 import base64
 import os
 
@@ -77,10 +71,15 @@ def upload_file_api(username, password, filename, ciphertext, nonce_iv, auth_tag
         headers=_auth_headers(username, password),
     )
 
-
 def list_files_api(username, password):
     return _request("GET", "/api/files", headers=_auth_headers(username, password))
 
+def download_file_api(username, password, file_id):
+    return _request(
+        "GET",
+        f"/api/files/{file_id}",
+        headers=_auth_headers(username, password),
+    )
 
 def delete_file_api(username, password, file_id):
     return _request(
