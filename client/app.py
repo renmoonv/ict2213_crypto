@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file
+from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file, jsonify
 from werkzeug.utils import secure_filename
 import io
 import os
@@ -6,7 +6,9 @@ import sys
 import time
 import subprocess
 import requests
-from api import list_files_api, upload_file_api, download_file_api, delete_file_api
+import mimetypes
+import base64
+from api import list_files_api, upload_file_api, download_file_api, delete_file_api, read_file_api, modify_file_api
 from auth import (
     register as do_register,
     login as do_login,
@@ -76,7 +78,7 @@ def home():
         return redirect(url_for("login"))
 
     username = session.get("username")
-    has_privkey = get_private_key_bytes() is not None
+    has_privkey =  get_private_key_bytes() is not None
     uploaded_files = list_files_api(auth_context["username"], auth_context["password"]) or []
     uploaded_files = sorted(uploaded_files, key=lambda item: item.get("filename", "").lower())
     return render_template("home.html", username=username, has_privkey=has_privkey, uploaded_files=uploaded_files)
@@ -203,7 +205,7 @@ def download_file(file_id):
         flash("Download failed. File not found or access denied.", "error")
         return redirect(url_for("home"))
 
-    import base64
+    
     ciphertext = base64.b64decode(result["ciphertext"])
     nonce_iv = base64.b64decode(result["nonce_iv"])
     auth_tag = base64.b64decode(result["auth_tag"])
@@ -219,7 +221,6 @@ def download_file(file_id):
         download_name=filename,
         mimetype="application/octet-stream",
     )
-
 
 @app.route("/remove/<int:file_id>", methods=["POST"])
 def remove_file(file_id):
@@ -238,8 +239,101 @@ def remove_file(file_id):
         return redirect(url_for("home"))
 
     flash("File removed successfully.", "success")
-    return redirect(url_for("home"))
+    return redirect(url_for("home")) 
 
+@app.route("/api/files/<int:file_id>/content", methods=["GET"])
+def get_file_content(file_id):
+    if not session.get("logged_in"):
+        return jsonify({"error": "Not logged in"}), 401
+
+    try:
+        plaintext, fek, perm_type = read_file(file_id, get_private_key_bytes())
+        session[f"fek_{file_id}"] = base64.b64encode(fek).decode()
+        return jsonify({
+            "content": plaintext.decode("utf-8"),
+            "permission_type": perm_type
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/files/<int:file_id>/content", methods=["PUT"])
+def put_file_content(file_id):
+    if not session.get("logged_in"):
+        return jsonify({"error": "Not logged in"}), 401
+
+    fek_b64 = session.get(f"fek_{file_id}")
+    if not fek_b64:
+        return jsonify({"error": "Re-open the file first"}), 400
+    
+    body = request.get_json()
+    is_binary = body.get("is_binary", False)
+
+    if is_binary:
+        new_content = base64.b64decode(body.get("content", ""))
+    else:
+        new_content = body.get("content", "").encode("utf-8")
+
+    try:
+        modify_file(file_id, new_content, base64.b64decode(fek_b64))
+        return jsonify({"message": "File updated"})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+def read_file(file_id, private_key_bytes):
+    auth_context = get_auth_context()
+    if not auth_context:
+        flash("Authenticated session not available. Please login again.", "error")
+        return redirect(url_for("login"))
+
+    result = read_file_api(auth_context["username"], auth_context["password"], file_id)
+    if not result:
+        raise RuntimeError("Failed to read file")
+
+    ciphertext = base64.b64decode(result["ciphertext"])
+    nonce_iv = base64.b64decode(result["nonce_iv"])
+    auth_tag = base64.b64decode(result["auth_tag"])
+    wrapped_fek = base64.b64decode(result["wrapped_fek"])
+    perm_type = result["permission_type"] 
+
+    fek = unwrap_file_encryption_key(wrapped_fek, private_key_bytes)
+
+    plaintext = decrypt_file_bytes(ciphertext, nonce_iv, auth_tag, fek)
+    return plaintext, fek, perm_type
+
+
+def modify_file(file_id, new_content_bytes, fek):
+    auth_context = get_auth_context()
+    if not auth_context:
+        raise RuntimeError("No auth context available")
+
+    # re-encrypt with same FEK
+    _, new_nonce_iv, new_ciphertext, new_auth_tag = encrypt_file_bytes(new_content_bytes, fek)
+
+    data = {
+        "ciphertext": base64.b64encode(new_ciphertext).decode(),
+        "nonce_iv": base64.b64encode(new_nonce_iv).decode(),
+        "auth_tag": base64.b64encode(new_auth_tag).decode()
+    }
+
+    payload = {
+        "ciphertext": base64.b64encode(new_ciphertext).decode(),
+        "nonce_iv":   base64.b64encode(new_nonce_iv).decode(),
+        "auth_tag":   base64.b64encode(new_auth_tag).decode()
+    }
+
+    result = modify_file_api(  
+        auth_context["username"],
+        auth_context["password"],
+        file_id,
+        payload
+    )
+    if not result:
+        raise RuntimeError("Failed to update file")
+    return result
 
 if __name__ == "__main__":
     _ensure_backend_running()

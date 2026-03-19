@@ -100,3 +100,18 @@ def delete_file_api(username, password, file_id):
         f"/api/files/{file_id}",
         headers=_auth_headers(username, password),
     )
+
+def read_file_api(username, password, file_id):
+    return _request(
+        "GET",
+        f"/api/files/{file_id}",
+        headers=_auth_headers(username, password),
+    )
+
+def modify_file_api(username, password, file_id, payload):
+    return _request(
+        "PUT",
+        f"/api/files/{file_id}",
+        headers=_auth_headers(username, password),
+        json=payload
+    )

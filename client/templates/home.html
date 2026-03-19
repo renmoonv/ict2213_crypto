@@ -107,6 +107,7 @@
     border: 1px solid #e0e0e0;
     text-align: center;
     cursor: pointer;
+    position: relative
   }
 
   .file-card:hover {
@@ -139,7 +140,78 @@
   .file-actions form {
     margin: 0;
   }
+
+  .file-menu-wrapper {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  }
+  .three-dot-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 50%;
+  color: #555;
+  line-height: 1;
+  }
+
+  .three-dot-btn:hover {
+    background: #f0f0f0;
+  }
+
+  .file-dropdown {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 28px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    min-width: 160px;
+    z-index: 100;
+    overflow: hidden;
+  }
+
+  .file-dropdown.open {
+    display: block;
+  }
+
+  .file-dropdown a,
+  .file-dropdown .dropdown-remove-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    text-decoration: none;
+    color: #333;
+    font-size: 14px;
+    width: 100%;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .file-dropdown a:hover,
+  .file-dropdown .dropdown-remove-btn:hover {
+    background: #f5f5f5;
+  }
+
+  .file-dropdown .dropdown-remove-btn {
+    color: #d93025;
+  }
+
+  .file-dropdown form {
+    margin: 0;
+  }
 </style>
+
+<script src="{{ url_for('static', filename='js/edit.js') }}"></script>
+<script src="{{ url_for('static', filename='js/update.js') }}"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <div class="layout">
 
@@ -161,7 +233,9 @@
       </div>
 
       <form method="post" action="{{ url_for('logout') }}">
-        <button class="btn">Logout</button>
+        <button type="submit" class="btn btn-danger">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
+        </button>
       </form>
     </div>
 
@@ -176,21 +250,50 @@
     </div>
 
     <div class="files-panel">
-      <h3>Your Files</h3>
+      <h3>My Files</h3>
       {% if uploaded_files %}
         <div class="files-grid">
           {% for item in uploaded_files %}
             <div class="file-card">
-              <div class="file-icon">📄</div>
-              <div class="file-name">{{ item.filename }}</div>
-              <div class="file-meta">ID: {{ item.file_id }}</div>
-              <div class="file-actions">
-                <a href="{{ url_for('download_file', file_id=item.file_id) }}" class="btn">Download</a>
-                {% if item.is_owner %}
-                  <form method="post" action="{{ url_for('remove_file', file_id=item.file_id) }}">
-                    <button type="submit" class="btn btn-danger">Remove</button>
-                  </form>
-                {% endif %}
+                <div class="file-icon">📄</div>
+                <div class="file-name">{{ item.filename }}</div>
+                <div class="file-meta">ID: {{ item.file_id }}</div>
+
+              <div class="file-menu-wrapper">
+                <button class="three-dot-btn" onclick="toggleMenu(event, 'menu-{{ item.file_id }}')">⋮</button>
+                
+                {% set text_extensions = ['.txt', '.csv', '.json', '.py', '.js', '.html', '.md', '.xml'] %}
+                {% set file_ext = item.filename.rsplit('.', 1) %}
+                {% set is_text_file = ('.' + file_ext[-1].lower()) in text_extensions if file_ext|length > 1 else false %}
+                
+                <div class="file-dropdown" id="menu-{{ item.file_id }}">
+                  <a href="{{ url_for('download_file', file_id=item.file_id) }}">
+                    <i class="fa-solid fa-download"></i> Download
+                  </a>
+
+                  <!-- only allow text files to edit in website -->
+                  {% if is_text_file and (item.permission_type == "write" or item.is_owner) %}
+                    <a href="#" onclick="openFileEditor('{{ item.file_id }}', '{{ item.filename }}', '{{ item.permission_type }}', event)">
+                      <i class="fa-solid fa-pen-to-square"></i> Edit
+                    </a>
+                  {% endif %}
+
+                  {% if item.permission_type == "write" or item.is_owner %}
+                    <a href="#" onclick="triggerReplace('{{ item.file_id }}', event)">
+                      <i class="fa-solid fa-retweet"></i> Update
+                    </a>
+                    <input type="file" id="replace-input-{{ item.file_id }}" style="display:none;"
+                          onchange="replaceFile('{{ item.file_id }}', this)">
+                  {% endif %}
+
+                  {% if item.is_owner %}
+                    <form method="post" action="{{ url_for('remove_file', file_id=item.file_id) }}">
+                      <button type="submit" class="dropdown-remove-btn">
+                        <i class="fa-solid fa-trash-can"></i> Remove
+                      </button>
+                    </form>
+                  {% endif %}
+                </div>
               </div>
             </div>
           {% endfor %}
@@ -200,6 +303,16 @@
       {% endif %}
     </div>
 
+    <div id="file-editor-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; align-items:center; justify-content:center;">
+      <div style="background:#fff; border-radius:8px; padding:24px; width:60vw; max-height:80vh; display:flex; flex-direction:column; gap:12px;">
+        <h3 id="editor-filename" style="margin:0;"></h3>
+        <textarea id="file-editor-textarea" style="flex:1; min-height:300px; font-family:monospace; font-size:13px; border:1px solid #ccc; border-radius:4px; padding:8px; resize:vertical;"></textarea>
+        <div style="display:flex; gap:8px; justify-content:flex-end;">
+          <button onclick="closeEditor()">Cancel</button>
+          <button id="save-file-btn" style="display:none;">Save</button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
