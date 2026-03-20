@@ -115,3 +115,55 @@ def modify_file_api(username, password, file_id, payload):
         headers=_auth_headers(username, password),
         json=payload
     )
+
+
+def share_file_api(username, password, file_id, target_user_id, permission_type, wrapped_fek, fek_version=None):
+    payload = {
+        "target_user_id": target_user_id,
+        "permission_type": permission_type,
+        "wrapped_fek": wrapped_fek,
+    }
+    if fek_version is not None:
+        payload["fek_version"] = fek_version
+
+    return _request(
+        "POST",
+        f"/api/files/{file_id}/share",
+        headers=_auth_headers(username, password),
+        json=payload,
+    )
+
+
+def get_file_permissions_api(username, password, file_id):
+    return _request(
+        "GET",
+        f"/api/files/{file_id}/permissions",
+        headers=_auth_headers(username, password),
+    )
+
+
+def get_user_public_key_api(username, password, user_id):
+    return _request(
+        "GET",
+        f"/api/users/{user_id}/public-key",
+        headers=_auth_headers(username, password),
+    )
+
+
+def revoke_file_api(username, password, file_id, revoked_user_id, new_ciphertext, new_nonce_iv, new_auth_tag, remaining_users, fek_version=None):
+    payload = {
+        "revoked_user_id": revoked_user_id,
+        "new_ciphertext": new_ciphertext,
+        "new_nonce_iv": new_nonce_iv,
+        "new_auth_tag": new_auth_tag,
+        "remaining_users": remaining_users,
+    }
+    if fek_version is not None:
+        payload["fek_version"] = fek_version
+
+    return _request(
+        "POST",
+        f"/api/files/{file_id}/revoke",
+        headers=_auth_headers(username, password),
+        json=payload,
+    )

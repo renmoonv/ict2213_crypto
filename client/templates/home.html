@@ -255,6 +255,16 @@
         <div class="files-grid">
           {% for item in uploaded_files %}
             <div class="file-card">
+              <div class="file-icon">📄</div>
+              <div class="file-name">{{ item.filename }}</div>
+              <div class="file-meta">ID: {{ item.file_id }}</div>
+              <div class="file-actions">
+                <a href="{{ url_for('download_file', file_id=item.file_id) }}" class="btn">Download</a>
+                {% if item.is_owner %}
+                  <form method="post" action="{{ url_for('remove_file', file_id=item.file_id) }}">
+                    <button type="submit" class="btn btn-danger">Remove</button>
+                  </form>
+                {% endif %}
                 <div class="file-icon">📄</div>
                 <div class="file-name">{{ item.filename }}</div>
                 <div class="file-meta">ID: {{ item.file_id }}</div>
@@ -287,6 +297,12 @@
                   {% endif %}
 
                   {% if item.is_owner %}
+                    <a href="#" onclick="shareFile({{ item.file_id }}); return false;">
+                      <i class="fa-solid fa-user-plus"></i> Share
+                    </a>
+                    <a href="#" onclick="revokeUser({{ item.file_id }}); return false;">
+                      <i class="fa-solid fa-user-slash"></i> Revoke
+                    </a>
                     <form method="post" action="{{ url_for('remove_file', file_id=item.file_id) }}">
                       <button type="submit" class="dropdown-remove-btn">
                         <i class="fa-solid fa-trash-can"></i> Remove
