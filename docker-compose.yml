@@ -23,6 +23,18 @@ services:
     networks:
       - app_net
 
+  adminer:
+    image: adminer
+    container_name: applied_crypto_adminer
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    networks:
+      - app_net
+
 volumes:
   mariadb_data:
 
