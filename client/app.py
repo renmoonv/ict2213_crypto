@@ -6,9 +6,7 @@ import sys
 import time
 import subprocess
 import requests
-<<<<<<< Updated upstream
 from api import list_files_api, upload_file_api, download_file_api, delete_file_api
-=======
 import mimetypes
 import base64
 from api import (
@@ -23,7 +21,6 @@ from api import (
     get_user_public_key_api,
     revoke_file_api,
 )
->>>>>>> Stashed changes
 from auth import (
     register as do_register,
     login as do_login,
@@ -257,8 +254,6 @@ def remove_file(file_id):
     flash("File removed successfully.", "success")
     return redirect(url_for("home"))
 
-<<<<<<< Updated upstream
-=======
 @app.route("/share/<int:file_id>", methods=["POST"])
 def share_file(file_id):
     if not session.get("logged_in"):
@@ -547,7 +542,6 @@ def modify_file(file_id, new_content_bytes, fek):
     if not result:
         raise RuntimeError("Failed to update file")
     return result
->>>>>>> Stashed changes
 
 if __name__ == "__main__":
     _ensure_backend_running()

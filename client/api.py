@@ -99,8 +99,6 @@ def delete_file_api(username, password, file_id):
         "DELETE",
         f"/api/files/{file_id}",
         headers=_auth_headers(username, password),
-<<<<<<< Updated upstream
-=======
     )
 
 def read_file_api(username, password, file_id):
@@ -168,5 +166,4 @@ def revoke_file_api(username, password, file_id, revoked_user_id, new_ciphertext
         f"/api/files/{file_id}/revoke",
         headers=_auth_headers(username, password),
         json=payload,
->>>>>>> Stashed changes
     )
