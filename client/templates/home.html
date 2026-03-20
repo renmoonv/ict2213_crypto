@@ -181,6 +181,7 @@
         <div class="files-grid">
           {% for item in uploaded_files %}
             <div class="file-card">
+<<<<<<< Updated upstream
               <div class="file-icon">📄</div>
               <div class="file-name">{{ item.filename }}</div>
               <div class="file-meta">ID: {{ item.file_id }}</div>
@@ -191,6 +192,53 @@
                     <button type="submit" class="btn btn-danger">Remove</button>
                   </form>
                 {% endif %}
+=======
+                <div class="file-icon">📄</div>
+                <div class="file-name">{{ item.filename }}</div>
+                <div class="file-meta">ID: {{ item.file_id }}</div>
+
+              <div class="file-menu-wrapper">
+                <button class="three-dot-btn" onclick="toggleMenu(event, 'menu-{{ item.file_id }}')">⋮</button>
+                
+                {% set text_extensions = ['.txt', '.csv', '.json', '.py', '.js', '.html', '.md', '.xml'] %}
+                {% set file_ext = item.filename.rsplit('.', 1) %}
+                {% set is_text_file = ('.' + file_ext[-1].lower()) in text_extensions if file_ext|length > 1 else false %}
+                
+                <div class="file-dropdown" id="menu-{{ item.file_id }}">
+                  <a href="{{ url_for('download_file', file_id=item.file_id) }}">
+                    <i class="fa-solid fa-download"></i> Download
+                  </a>
+
+                  <!-- only allow text files to edit in website -->
+                  {% if is_text_file and (item.permission_type == "write" or item.is_owner) %}
+                    <a href="#" onclick="openFileEditor('{{ item.file_id }}', '{{ item.filename }}', '{{ item.permission_type }}', event)">
+                      <i class="fa-solid fa-pen-to-square"></i> Edit
+                    </a>
+                  {% endif %}
+
+                  {% if item.permission_type == "write" or item.is_owner %}
+                    <a href="#" onclick="triggerReplace('{{ item.file_id }}', event)">
+                      <i class="fa-solid fa-retweet"></i> Update
+                    </a>
+                    <input type="file" id="replace-input-{{ item.file_id }}" style="display:none;"
+                          onchange="replaceFile('{{ item.file_id }}', this)">
+                  {% endif %}
+
+                  {% if item.is_owner %}
+                    <a href="#" onclick="shareFile({{ item.file_id }}); return false;">
+                      <i class="fa-solid fa-user-plus"></i> Share
+                    </a>
+                    <a href="#" onclick="revokeUser({{ item.file_id }}); return false;">
+                      <i class="fa-solid fa-user-slash"></i> Revoke
+                    </a>
+                    <form method="post" action="{{ url_for('remove_file', file_id=item.file_id) }}">
+                      <button type="submit" class="dropdown-remove-btn">
+                        <i class="fa-solid fa-trash-can"></i> Remove
+                      </button>
+                    </form>
+                  {% endif %}
+                </div>
+>>>>>>> Stashed changes
               </div>
             </div>
           {% endfor %}
