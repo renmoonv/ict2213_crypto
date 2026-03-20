@@ -256,48 +256,6 @@ def remove_file(file_id):
     flash("File removed successfully.", "success")
     return redirect(url_for("home")) 
 
-@app.route("/api/files/<int:file_id>/content", methods=["GET"])
-def get_file_content(file_id):
-    if not session.get("logged_in"):
-        return jsonify({"error": "Not logged in"}), 401
-
-    try:
-        plaintext, fek, perm_type = read_file(file_id, get_private_key_bytes())
-        session[f"fek_{file_id}"] = base64.b64encode(fek).decode()
-        return jsonify({
-            "content": plaintext.decode("utf-8"),
-            "permission_type": perm_type
-        })
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
-
-@app.route("/api/files/<int:file_id>/content", methods=["PUT"])
-def put_file_content(file_id):
-    if not session.get("logged_in"):
-        return jsonify({"error": "Not logged in"}), 401
-
-    fek_b64 = session.get(f"fek_{file_id}")
-    if not fek_b64:
-        return jsonify({"error": "Re-open the file first"}), 400
-    
-    body = request.get_json()
-    is_binary = body.get("is_binary", False)
-
-    if is_binary:
-        new_content = base64.b64decode(body.get("content", ""))
-    else:
-        new_content = body.get("content", "").encode("utf-8")
-
-    try:
-        modify_file(file_id, new_content, base64.b64decode(fek_b64))
-        return jsonify({"message": "File updated"})
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
-
 def read_file(file_id, private_key_bytes):
     auth_context = get_auth_context()
     if not auth_context:
