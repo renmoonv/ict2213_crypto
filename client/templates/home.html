@@ -250,7 +250,18 @@
     </div>
 
     <div class="files-panel">
-      <h3>My Files</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3>My Files</h3>
+        <form method="get" action="{{ url_for('home') }}" style="display: flex; gap: 10px;">
+          <input type="text" name="search" value="{{ search_query }}" placeholder="Search files..." 
+                 style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; width: 200px;" />
+          <button type="submit" class="btn" style="padding: 8px 16px;">Search</button>
+          {% if search_query %}
+            <a href="{{ url_for('home') }}" class="btn" style="background: #666; padding: 8px 16px;">Clear</a>
+          {% endif %}
+        </form>
+      </div>
+      
       {% if uploaded_files %}
         <div class="files-grid">
           {% for item in uploaded_files %}
@@ -305,7 +316,11 @@
           {% endfor %}
         </div>
       {% else %}
-        <p>No server-stored files found.</p>
+        {% if search_query %}
+          <p>No files found matching "{{ search_query }}". <a href="{{ url_for('home') }}">Clear search</a></p>
+        {% else %}
+          <p>No server-stored files found.</p>
+        {% endif %}
       {% endif %}
     </div>
 

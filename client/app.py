@@ -95,8 +95,14 @@ def home():
     username = session.get("username")
     has_privkey =  get_private_key_bytes() is not None
     uploaded_files = list_files_api(auth_context["username"], auth_context["password"]) or []
+    
+    # Add search functionality
+    search_query = request.args.get("search", "").strip().lower()
+    if search_query:
+        uploaded_files = [f for f in uploaded_files if search_query in f.get("filename", "").lower()]
+    
     uploaded_files = sorted(uploaded_files, key=lambda item: item.get("filename", "").lower())
-    return render_template("home.html", username=username, has_privkey=has_privkey, uploaded_files=uploaded_files)
+    return render_template("home.html", username=username, has_privkey=has_privkey, uploaded_files=uploaded_files, search_query=search_query)
 
 @app.route("/logout", methods=["POST", "GET"])
 def logout():
@@ -254,7 +260,7 @@ def remove_file(file_id):
         return redirect(url_for("home"))
 
     flash("File removed successfully.", "success")
-    return redirect(url_for("home")) 
+    return redirect(url_for("home"))
 
 def read_file(file_id, private_key_bytes):
     auth_context = get_auth_context()
