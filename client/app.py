@@ -80,6 +80,7 @@ def home():
 
     auth_context = get_auth_context()
     if not auth_context:
+        session.clear()
         return render_template("home.html", logged_in=False)
 
     username = session.get("username")
@@ -106,14 +107,29 @@ def register():
             flash("Username and password required.", "error")
             return redirect(url_for("register"))
 
-        ok = do_register(username, password)
+        import re
+        pwd_errors = []
+        if len(password) < 8:
+            pwd_errors.append("at least 8 characters")
+        if not re.search(r"[A-Z]", password):
+            pwd_errors.append("an uppercase letter")
+        if not re.search(r"[a-z]", password):
+            pwd_errors.append("a lowercase letter")
+        if not re.search(r"\d", password):
+            pwd_errors.append("a number")
+        if not re.search(r"[^A-Za-z0-9]", password):
+            pwd_errors.append("a special character")
+        if pwd_errors:
+            flash("Password must contain: " + ", ".join(pwd_errors) + ".", "error")
+            return redirect(url_for("register"))
+
+        ok, error_msg = do_register(username, password)
         if ok:
             flash("Registered successfully. You can login now.", "success")
             return redirect(url_for("login"))
         else:
-            # Even if server is down, your do_register may still save keystore locally (depending on your logic)
-            flash("Register completed locally, but server registration may have failed (server/TLS not running).", "warning")
-            return redirect(url_for("login"))
+            flash(error_msg or "Registration failed.", "error")
+            return redirect(url_for("register"))
 
     return render_template("register.html")
 

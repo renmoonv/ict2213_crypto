@@ -25,17 +25,16 @@ def register(username, password):
 
     nonce, encrypted_priv = encrypt_private_key(priv, local_key)
 
-    result = register_api(username, password, pub)
-    ok = result is not None
+    result, error_msg = register_api(username, password, pub)
 
-    if ok:
+    if result is not None:
         # Persist local keystore only when server registration succeeds.
         save_keystore(username, salt, nonce, encrypted_priv, kdf_params)
         print("Registration OK.")
+        return True, None
     else:
-        print("Registration failed. Server not reachable or returned an error.")
-
-    return ok
+        print(f"Registration failed: {error_msg}")
+        return False, error_msg
 
 def login(username, password):
     global _current_private_key, _current_username, _current_password, _current_user_id, _current_public_key

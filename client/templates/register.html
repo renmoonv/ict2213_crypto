@@ -9,9 +9,41 @@
       </div>
       <div class="row">
         <label>Password</label>
-        <input name="password" type="password" autocomplete="new-password" />
+        <input name="password" id="reg-password" type="password" autocomplete="new-password" oninput="checkStrength(this.value)" />
+        <div id="strength-bar-wrap" style="margin-top:6px; height:6px; background:#e0e0e0; border-radius:4px; overflow:hidden;">
+          <div id="strength-bar" style="height:100%; width:0; border-radius:4px; transition:width .25s, background .25s;"></div>
+        </div>
+        <ul id="pwd-rules" style="margin:6px 0 0; padding-left:18px; font-size:13px; color:#555;">
+          <li id="rule-len">At least 8 characters</li>
+          <li id="rule-upper">An uppercase letter (A-Z)</li>
+          <li id="rule-lower">A lowercase letter (a-z)</li>
+          <li id="rule-num">A number (0-9)</li>
+          <li id="rule-special">A special character (!@#$... etc.)</li>
+        </ul>
       </div>
       <button type="submit">Create account</button>
     </form>
   </div>
+  <script>
+    function checkStrength(val) {
+      const rules = [
+        ["rule-len",     val.length >= 8],
+        ["rule-upper",   /[A-Z]/.test(val)],
+        ["rule-lower",   /[a-z]/.test(val)],
+        ["rule-num",     /\d/.test(val)],
+        ["rule-special", /[^A-Za-z0-9]/.test(val)],
+      ];
+      let passed = 0;
+      rules.forEach(([id, ok]) => {
+        const el = document.getElementById(id);
+        el.style.color = ok ? "#1e8e3e" : "#555";
+        el.style.fontWeight = ok ? "600" : "";
+        if (ok) passed++;
+      });
+      const bar = document.getElementById("strength-bar");
+      const colors = ["#e53935","#e53935","#fb8c00","#fdd835","#43a047","#1e8e3e"];
+      bar.style.width = (passed * 20) + "%";
+      bar.style.background = colors[passed];
+    }
+  </script>
 {% endblock %}
