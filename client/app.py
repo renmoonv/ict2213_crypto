@@ -480,10 +480,18 @@ def get_file_content(file_id):
     try:
         plaintext, fek, perm_type = read_file(file_id, get_private_key_bytes())
         session[f"fek_{file_id}"] = base64.b64encode(fek).decode()
+
+        # handle binary files 
+        try:
+            content = plaintext.decode("utf-8")
+        except UnicodeDecodeError:
+            content = None
+
         return jsonify({
-            "content": plaintext.decode("utf-8"),
-            "permission_type": perm_type
+            "content": content,
+            "permission_type": perm_type,
         })
+        
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -541,7 +549,7 @@ def modify_file(file_id, new_content_bytes, fek):
     if not auth_context:
         raise RuntimeError("No auth context available")
 
-    # re-encrypt with same FEK
+    # re-encrypt with same FEK, new IV
     _, new_nonce_iv, new_ciphertext, new_auth_tag = encrypt_file_bytes(new_content_bytes, fek)
 
     payload = {
