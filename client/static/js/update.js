@@ -5,7 +5,8 @@ async function updateFile(fileId, inputEl) {
 
     const readResp = await fetch(`/api/files/${fileId}/content`);
     if (!readResp.ok) {
-        alert("Failed to authenticate for replace.");
+        const err = await readResp.json();
+        showToast("Failed to authenticate: " + (err.error || "Unknown error"), true);
         return;
     }
 
@@ -33,11 +34,11 @@ async function updateFile(fileId, inputEl) {
     });
 
     if (putResp.ok) {
-        alert(`"${file.name}" uploaded successfully to replace file ${fileId}.`);
+        showToast(`File updated successfully!`);
         inputEl.value = ""; 
     } else {
         const err = await putResp.json();
-        alert("Replace failed: " + (err.error || "Unknown error"));
+        showToast("Replace failed: " + (err.error || "Unknown error"), true);
     }
 }
 

@@ -412,6 +412,20 @@
   }
 </style>
 
+<div id="toast" style="
+            display: none;
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 9999;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: opacity 0.3s ease;
+        "></div>
+
 <script src="{{ url_for('static', filename='js/edit.js') }}"></script>
 <script src="{{ url_for('static', filename='js/update.js') }}"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -530,7 +544,7 @@
 
                   {% if item.is_owner %}
                     <hr>
-                    <a href="#" onclick="openAccessModal({{ item.file_id }}); return false;">
+                    <a href="#" onclick="openAccessModal('{{ item.file_id }}'); return false;">
                       <i class="fa-solid fa-users"></i> Manage Access
                     </a>
                     <form method="post" action="{{ url_for('remove_file', file_id=item.file_id) }}">
