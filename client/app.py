@@ -61,7 +61,7 @@ def _ensure_backend_running():
         "env": {**os.environ, "FLASK_DEBUG": "0"},
     }
     if os.name == "nt":
-        kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
+        kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW
 
     subprocess.Popen([sys.executable, server_app], **kwargs)
 
