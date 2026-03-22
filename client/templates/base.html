@@ -19,29 +19,70 @@
       /* Navbar styling: simple background and updated font */
       .nav {
         background: #2c3e50;
-        padding: 12px 20px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        padding: 12px 24px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
         width: 100%;
         box-sizing: border-box;
         position: sticky;
         top: 0;
         z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
       }
-      .nav a {
-        margin-right: 12px;
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .nav-home {
         color: #ffffff;
         font-family: "Helvetica Neue", Arial, sans-serif;
         font-weight: 600;
-        font-size: 15px;
+        font-size: 14px;
+        padding: 6px 14px;
+        border-radius: 6px;
+        text-decoration: none;
+        transition: background 0.15s;
       }
-      .nav a:hover { text-decoration: underline; opacity: 0.95; }
+      .nav-home:hover {
+        background: rgba(255,255,255,0.13);
+      }
+      .nav-links a {
+        color: #ffffff;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-weight: 600;
+        font-size: 14px;
+        padding: 6px 14px;
+        border-radius: 6px;
+        text-decoration: none;
+        transition: background 0.15s;
+      }
+      .nav-links a:hover {
+        background: rgba(255,255,255,0.13);
+      }
+      .nav-user {
+        color: #ffffff;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
     </style>
   </head>
   <body>
     <div class="nav">
-      <a href="{{ url_for('home') }}">Home</a>
-      <a href="{{ url_for('register') }}">Register</a>
-      <a href="{{ url_for('login') }}">Login</a>
+      <a class="nav-home" href="{{ url_for('home') }}">Home</a>
+      <div class="nav-links">
+        {% if session.get('logged_in') %}
+          <span class="nav-user">&#128100; {{ session.get('username') }}</span>
+        {% else %}
+          <a href="{{ url_for('register') }}">Register</a>
+          <a href="{{ url_for('login') }}">Login</a>
+        {% endif %}
+      </div>
     </div>
 
     <div class="container">

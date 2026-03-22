@@ -53,7 +53,15 @@ def register_api(username, password, pubkey_bytes):
         "password": password,
         "public_key": base64.b64encode(pubkey_bytes).decode("ascii"),
     }
-    return _request("POST", "/api/register", json=payload)
+    # Use requests directly so we can read the error body on 4xx responses.
+    try:
+        response = requests.post(f"{BASE_URL}/api/register", json=payload, verify=False, timeout=10)
+        if response.ok:
+            return response.json(), None
+        error_msg = response.json().get("error", "Registration failed")
+        return None, error_msg
+    except requests.RequestException:
+        return None, "Server not reachable"
 
 
 def login_api(username, password):
