@@ -34,7 +34,7 @@ from auth import (
 from crypto_utils import encrypt_file_bytes, wrap_file_encryption_key, public_key_from_private_bytes, unwrap_file_encryption_key, decrypt_file_bytes
 
 app = Flask(__name__)
-app.secret_key = "dev-only-change-me"  # for demo; change before submission if required
+app.secret_key = "34fe3012ec83d4fcea670e6aef8ae804d635e4c222955f3d154ec69729e2e596"
 
 
 def _api_health_check():
