@@ -2,60 +2,72 @@
 {% block content %}
 
 <style>
-  body { margin: 0; font-family: Arial, sans-serif; background: #f5f6fa; }
+  body { margin: 0; font-family: "Helvetica Neue", Arial, sans-serif; background: #f0f2f5; }
 
-  /* Allow this page to use the full width so the sidebar sits at the left edge */
   .container { max-width: none; margin: 0; padding: 0; }
+
+  .msg {
+    max-width: 960px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 12px;
+    box-sizing: border-box;
+  }
 
   .layout {
     display: flex;
-    height: 90vh;
+    min-height: calc(100vh - 49px);
   }
 
-  .sidebar {
-    width: 220px;
-    background: white;
-    border-right: 1px solid #ddd;
-    padding: 20px;
-  }
+  .dot-green  { background: #34a853; }
+  .dot-red    { background: #d93025; }
 
-  .sidebar h3 {
-    margin-top: 0;
-  }
-
-  .sidebar a {
-    display: block;
-    padding: 8px 0;
-    text-decoration: none;
-    color: #333;
-  }
-
-  .sidebar a:hover {
-    color: #1a73e8;
-  }
-
+  /* ── Main ── */
   .main {
     flex: 1;
-    padding: 30px;
+    padding: 28px 32px;
+    overflow-y: auto;
+    max-width: 960px;
+    width: 100%;
+    margin: 0 auto;
   }
 
   .topbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e4e6ea;
     gap: 12px;
+  }
+
+  .topbar-user h2 {
+    margin: 0 0 2px;
+    font-size: 22px;
+    color: #1a1a1a;
+  }
+
+  .topbar-user small {
+    font-size: 13px;
+    color: #888;
   }
 
   .topbar form { margin: 0; }
 
   .btn {
-    padding: 8px 14px;
+    padding: 8px 16px;
     background: #1a73e8;
     color: white;
     border: none;
-    border-radius: 6px;
+    border-radius: 7px;
     cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s;
   }
 
   .btn:hover {
@@ -70,65 +82,151 @@
     background: #b42318;
   }
 
+  /* ── Panels ── */
   .upload-panel,
   .files-panel {
     background: white;
     border: 1px solid #e0e0e0;
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 20px;
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .panel-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a1a;
+  }
+
+  .panel-header-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: #e8f0fe;
+    color: #1a73e8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+  }
+
+  /* ── Upload zone ── */
+  .upload-zone {
+    border: 2px dashed #c8d6f8;
+    border-radius: 10px;
+    padding: 18px 20px;
+    text-align: center;
+    background: #fafbff;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .upload-zone:hover {
+    border-color: #1a73e8;
+    background: #f0f4ff;
+  }
+
+  .upload-zone-icon {
+    font-size: 28px;
+    color: #1a73e8;
+    margin-bottom: 6px;
+  }
+
+  .upload-zone p {
+    margin: 0 0 14px;
+    color: #666;
+    font-size: 14px;
   }
 
   .upload-form {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     align-items: center;
+    justify-content: center;
     flex-wrap: wrap;
   }
 
   .upload-form input[type="file"] {
     background: white;
     border: 1px solid #d0d7de;
-    border-radius: 8px;
-    padding: 10px;
-    flex: 1 1 260px;
+    border-radius: 7px;
+    padding: 8px 12px;
+    font-size: 14px;
+    flex: 1 1 220px;
+    max-width: 320px;
+  }
+
+  /* ── Files grid ── */
+  .files-count {
+    font-size: 13px;
+    color: #888;
+    margin-left: auto;
+    font-weight: 400;
   }
 
   .files-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 15px;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 16px;
   }
 
   .file-card {
-    background: white;
-    padding: 15px;
-    border-radius: 10px;
-    border: 1px solid #e0e0e0;
+    background: #fafbff;
+    padding: 18px 14px 14px;
+    border-radius: 12px;
+    border: 1px solid #e4e8f0;
     text-align: center;
     cursor: pointer;
-    position: relative
+    position: relative;
+    transition: box-shadow 0.15s, border-color 0.15s;
   }
 
   .file-card:hover {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 16px rgba(26,115,232,0.10);
+    border-color: #aac4f5;
   }
 
   .file-icon {
-    font-size: 40px;
+    font-size: 38px;
     margin-bottom: 10px;
+    line-height: 1;
   }
 
   .file-name {
-    margin-bottom: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
     word-break: break-word;
+    color: #222;
   }
 
   .file-meta {
-    color: #666;
-    font-size: 13px;
+    color: #aaa;
+    font-size: 11px;
     margin-bottom: 12px;
   }
+
+  .file-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+  }
+
+  .file-badge-owner  { background: #e6f4ea; color: #1e8e3e; }
+  .file-badge-write  { background: #fce8e6; color: #d93025; }
+  .file-badge-read   { background: #e8f0fe; color: #1a73e8; }
 
   .file-actions {
     display: flex;
@@ -141,36 +239,40 @@
     margin: 0;
   }
 
+  /* ── Three-dot menu ── */
   .file-menu-wrapper {
-  position: absolute;
-  top: 8px;
-  right: 8px;
+    position: absolute;
+    top: 8px;
+    right: 8px;
   }
+
   .three-dot-btn {
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  padding: 2px 8px;
-  border-radius: 50%;
-  color: #555;
-  line-height: 1;
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 2px 7px;
+    border-radius: 6px;
+    color: #888;
+    line-height: 1;
+    transition: background 0.12s;
   }
 
   .three-dot-btn:hover {
-    background: #f0f0f0;
+    background: #eaecf0;
+    color: #333;
   }
 
   .file-dropdown {
     display: none;
     position: absolute;
     right: 0;
-    top: 28px;
+    top: 30px;
     background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-    min-width: 160px;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.10);
+    min-width: 170px;
     z-index: 100;
     overflow: hidden;
   }
@@ -187,17 +289,18 @@
     padding: 10px 16px;
     text-decoration: none;
     color: #333;
-    font-size: 14px;
+    font-size: 13.5px;
     width: 100%;
     background: none;
     border: none;
     cursor: pointer;
     text-align: left;
+    box-sizing: border-box;
   }
 
   .file-dropdown a:hover,
   .file-dropdown .dropdown-remove-btn:hover {
-    background: #f5f5f5;
+    background: #f5f6fa;
   }
 
   .file-dropdown .dropdown-remove-btn {
@@ -207,7 +310,121 @@
   .file-dropdown form {
     margin: 0;
   }
+
+  .file-dropdown hr {
+    border: none;
+    border-top: 1px solid #f0f0f0;
+    margin: 4px 0;
+  }
+
+  /* Access management modal */
+  #access-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+  #access-modal-overlay.open {
+    display: flex;
+  }
+  #access-modal {
+    background: #fff;
+    border-radius: 10px;
+    padding: 28px 32px;
+    width: 480px;
+    max-width: 95vw;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.18);
+  }
+  #access-modal h3 { margin: 0; font-size: 18px; }
+  #access-user-list {
+    flex: 1;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    min-height: 60px;
+  }
+  .access-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 14px;
+  }
+  .access-row:last-child { border-bottom: none; }
+  .access-row .access-info { display: flex; align-items: center; gap: 10px; }
+  .access-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .access-badge.read  { background: #e8f0fe; color: #1a73e8; }
+  .access-badge.write { background: #fce8e6; color: #d93025; }
+  .access-badge.owner { background: #e6f4ea; color: #1e8e3e; }
+  .revoke-btn {
+    font-size: 12px;
+    padding: 4px 12px;
+    background: #d93025;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .revoke-btn:hover { background: #b42318; }
+  .revoke-btn:disabled { background: #ccc; cursor: not-allowed; }
+  #access-add-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  #access-add-row input {
+    flex: 1 1 140px;
+    padding: 7px 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+  #access-add-row select {
+    padding: 7px 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+  #access-add-row .btn { white-space: nowrap; }
+  #access-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+  }
+  #access-status {
+    font-size: 13px;
+    min-height: 18px;
+    color: #d93025;
+  }
 </style>
+
+<div id="toast" style="
+            display: none;
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 9999;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: opacity 0.3s ease;
+        "></div>
 
 <script src="{{ url_for('static', filename='js/edit.js') }}"></script>
 <script src="{{ url_for('static', filename='js/update.js') }}"></script>
@@ -215,21 +432,24 @@
 
 <div class="layout">
 
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <h3>Secure Drive</h3>
-    <a href="#">My Files</a>
-    <a href="#">Shared With Me</a>
-    <a href="#">Settings</a>
-  </div>
-
   <!-- Main Content -->
   <div class="main">
 
+    {% if not logged_in %}
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:60vh; text-align:center; gap:16px;">
+      <div style="font-size:56px;">&#128274;</div>
+      <h2 style="margin:0; font-size:26px; color:#1a1a1a;">Welcome!</h2>
+      <p style="color:#666; font-size:15px; max-width:360px; margin:0;">Encrypt and store your files securely. Please register or log in to get started.</p>
+      <div style="display:flex; gap:12px; margin-top:8px;">
+        <a href="{{ url_for('register') }}" class="btn"><i class="fa-solid fa-user-plus"></i> Register</a>
+        <a href="{{ url_for('login') }}" class="btn" style="background:#444;"><i class="fa-solid fa-right-to-bracket"></i> Login</a>
+      </div>
+    </div>
+    {% else %}
+
     <div class="topbar">
-      <div>
-        <h2>Welcome, {{ username }}</h2>
-        <small>Private key loaded: {{ "Yes" if has_privkey else "No" }}</small>
+      <div class="topbar-user">
+        <h2><i class="fa-solid fa-circle-user" style="color:#1a73e8; font-size:20px;"></i> {{ username }}</h2>
       </div>
 
       <form method="post" action="{{ url_for('logout') }}">
@@ -240,13 +460,18 @@
     </div>
 
     <div class="upload-panel">
-      <h3>Upload File</h3>
-      <p>Select a file to encrypt in the client before storing ciphertext on the server.</p>
-
-      <form method="post" action="{{ url_for('upload_file') }}" enctype="multipart/form-data" class="upload-form">
-        <input type="file" name="file" required />
-        <button type="submit" class="btn">Upload</button>
-      </form>
+      <div class="panel-header">
+        <div class="panel-header-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+        <h3>Upload File</h3>
+      </div>
+      <div class="upload-zone">
+        <div class="upload-zone-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+        <p>Select a file to upload.</p>
+        <form method="post" action="{{ url_for('upload_file') }}" enctype="multipart/form-data" class="upload-form">
+          <input type="file" name="file" required />
+          <button type="submit" class="btn"><i class="fa-solid fa-upload"></i> Upload</button>
+        </form>
+      </div>
     </div>
 
     <div class="files-panel">
@@ -262,16 +487,48 @@
         </form>
       </div>
       
+      <div class="panel-header">
+        <div class="panel-header-icon"><i class="fa-solid fa-folder-open"></i></div>
+        <h3>My Files</h3>
+        {% if uploaded_files %}
+          <span class="files-count">{{ uploaded_files | length }} file{{ 's' if uploaded_files | length != 1 }}</span>
+        {% endif %}
+      </div>
       {% if uploaded_files %}
         <div class="files-grid">
           {% for item in uploaded_files %}
+            {% set ext = item.filename.rsplit('.', 1)[-1].lower() if '.' in item.filename else '' %}
+            {% if ext in ['jpg','jpeg','png','gif','svg','webp'] %}
+              {% set ficon = '🖼️' %}
+            {% elif ext in ['mp4','mov','avi','mkv','webm'] %}
+              {% set ficon = '🎬' %}
+            {% elif ext in ['mp3','wav','ogg','flac'] %}
+              {% set ficon = '🎵' %}
+            {% elif ext in ['pdf'] %}
+              {% set ficon = '📕' %}
+            {% elif ext in ['zip','tar','gz','rar','7z'] %}
+              {% set ficon = '🗜️' %}
+            {% elif ext in ['py','js','ts','html','css','sh','c','cpp','java'] %}
+              {% set ficon = '💻' %}
+            {% elif ext in ['txt','md','csv','json','xml'] %}
+              {% set ficon = '📄' %}
+            {% else %}
+              {% set ficon = '📁' %}
+            {% endif %}
             <div class="file-card">
-              <div class="file-icon">📄</div>
+              <div class="file-icon">{{ ficon }}</div>
               <div class="file-name">{{ item.filename }}</div>
               <div class="file-meta">ID: {{ item.file_id }}</div>
+              {% if item.is_owner %}
+                <span class="file-badge file-badge-owner">Owner</span>
+              {% elif item.permission_type == 'write' %}
+                <span class="file-badge file-badge-write">Write</span>
+              {% else %}
+                <span class="file-badge file-badge-read">Read</span>
+              {% endif %}
 
               <div class="file-menu-wrapper">
-                <button class="three-dot-btn" onclick="toggleMenu(event, 'menu-{{ item.file_id }}')">⋮</button>
+                <button class="three-dot-btn" onclick="toggleMenu(event, 'menu-{{ item.file_id }}')">&#8942;</button>
                 
                 {% set text_extensions = ['.txt', '.csv', '.json', '.py', '.js', '.html', '.md', '.xml'] %}
                 {% set file_ext = item.filename.rsplit('.', 1) %}
@@ -294,15 +551,13 @@
                       <i class="fa-solid fa-retweet"></i> Update
                     </a>
                     <input type="file" id="replace-input-{{ item.file_id }}" style="display:none;"
-                          onchange="replaceFile('{{ item.file_id }}', this)">
+                          onchange="updateFile('{{ item.file_id }}', this)">
                   {% endif %}
 
                   {% if item.is_owner %}
-                    <a href="#" onclick="shareFile({{ item.file_id }}); return false;">
-                      <i class="fa-solid fa-user-plus"></i> Share
-                    </a>
-                    <a href="#" onclick="revokeUser({{ item.file_id }}); return false;">
-                      <i class="fa-solid fa-user-slash"></i> Revoke
+                    <hr>
+                    <a href="#" onclick="openAccessModal('{{ item.file_id }}'); return false;">
+                      <i class="fa-solid fa-users"></i> Manage Access
                     </a>
                     <form method="post" action="{{ url_for('remove_file', file_id=item.file_id) }}">
                       <button type="submit" class="dropdown-remove-btn">
@@ -324,6 +579,28 @@
       {% endif %}
     </div>
 
+    <!-- Access management modal -->
+    <div id="access-modal-overlay">
+      <div id="access-modal">
+        <h3><i class="fa-solid fa-users"></i> Manage Access</h3>
+        <div id="access-user-list">
+          <div class="access-row" id="access-loading">Loading&hellip;</div>
+        </div>
+        <div id="access-add-row">
+          <input type="text" id="access-new-user" placeholder="Username to share with" autocomplete="off">
+          <select id="access-new-perm">
+            <option value="read">Read</option>
+            <option value="write">Write</option>
+          </select>
+          <button class="btn" id="access-share-btn" onclick="submitShare()"><i class="fa-solid fa-user-plus"></i> Share</button>
+        </div>
+        <div id="access-status"></div>
+        <div id="access-modal-footer">
+          <button class="btn" style="background:#888;" onclick="closeAccessModal()">Close</button>
+        </div>
+      </div>
+    </div>
+
     <div id="file-editor-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; align-items:center; justify-content:center;">
       <div style="background:#fff; border-radius:8px; padding:24px; width:60vw; max-height:80vh; display:flex; flex-direction:column; gap:12px;">
         <h3 id="editor-filename" style="margin:0;"></h3>
@@ -334,6 +611,7 @@
         </div>
       </div>
     </div>
+    {% endif %}
   </div>
 </div>
 

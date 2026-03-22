@@ -44,13 +44,6 @@ def create_app():
     # ---------- AUTH HELPER ----------
 
     def require_auth(f):
-        """
-        Reads credentials from either:
-          - HTTP headers:  X-Username  +  X-Password
-          - JSON body:     username    +  password
-        Verifies the plaintext password against the Argon2id hash stored in DB.
-        On success, sets request.current_user to the User ORM object.
-        """
         @wraps(f)
         def wrapper(*args, **kwargs):
             username = request.headers.get("X-Username")
@@ -106,17 +99,6 @@ def create_app():
 
     @app.route("/api/register", methods=["POST"])
     def register():
-        """
-        Register a new user.
-
-        Request JSON:
-            username    (str)  - unique username
-            password    (str)  - plaintext password; server hashes with Argon2id
-            public_key  (str)  - X25519 public key, Base64-encoded
-
-        Response 201:
-            { "message": "User registered", "user_id": <int> }
-        """
         data = request.get_json()
         if not data:
             return jsonify({"error": "Invalid JSON"}), 400
@@ -145,16 +127,6 @@ def create_app():
 
     @app.route("/api/login", methods=["POST"])
     def login():
-        """
-        Authenticate a user.
-
-        Request JSON:
-            username  (str) - username
-            password  (str) - plaintext password
-
-        Response 200:
-            { "message": "Login OK", "user_id": <int>, "public_key": <str> }
-        """
         data = request.get_json()
         if not data:
             return jsonify({"error": "Invalid JSON"}), 400
@@ -185,14 +157,6 @@ def create_app():
     @app.route("/api/users/<int:user_id>/public-key", methods=["GET"])
     @require_auth
     def get_public_key_by_id(user_id):
-        """
-        Fetch a user's public key by user_id.
-        Used by the owner when sharing a file — owner needs recipient's public key
-        to wrap the FEK client-side.
-
-        Response 200:
-            { "user_id": <int>, "username": <str>, "public_key": <str> }
-        """
         user = User.query.get(user_id)
         if not user:
             return jsonify({"error": "User not found"}), 404
@@ -206,16 +170,6 @@ def create_app():
     @app.route("/api/users/lookup", methods=["GET"])
     @require_auth
     def lookup_user():
-        """
-        Look up a user's public key by username.
-        Query param: ?username=<str>
-
-        Used by the sharing UI so the owner can type a username and get back
-        the user_id + public key to wrap the FEK for.
-
-        Response 200:
-            { "user_id": <int>, "username": <str>, "public_key": <str> }
-        """
         username = request.args.get("username")
         if not username:
             return jsonify({"error": "username query param required"}), 400
@@ -235,22 +189,6 @@ def create_app():
     @app.route("/api/files", methods=["GET"])
     @require_auth
     def list_files():
-        """
-        List all files the authenticated user has access to (owned or shared).
-
-        Response 200:
-            [
-              {
-                "file_id": <int>,
-                "filename": <str>,
-                "owner_id": <int>,
-                "is_owner": <bool>,
-                "permission_type": "read" | "write",
-                "fek_version": <int>
-              },
-              ...
-            ]
-        """
         u = request.current_user
 
         perms = FilePermission.query.filter_by(user_id=u.user_id).all()
@@ -280,32 +218,6 @@ def create_app():
     @app.route("/api/files", methods=["POST"])
     @require_auth
     def upload_file():
-        """
-        Upload a new encrypted file.
-
-        The client encrypts the file with AES-256-GCM before sending.
-        The client also wraps the FEK with each authorised user's public key
-        (sealed box) and sends those wrapped keys here.
-        The owner MUST be included in the permissions list.
-
-        Request JSON:
-            filename     (str)  - original filename
-            ciphertext   (str)  - base64-encoded AES-256-GCM ciphertext
-            nonce_iv     (str)  - base64-encoded 12-byte nonce
-            auth_tag     (str)  - base64-encoded 16-byte GCM auth tag
-            permissions  (list) - [
-                {
-                  "user_id":         <int>,
-                  "permission_type": "read" | "write",
-                  "wrapped_fek":     <base64 str>,   # FEK sealed with user's public key
-                  "fek_version":     <int>            # optional, default 1
-                },
-                ...
-              ]
-
-        Response 201:
-            { "message": "File uploaded", "file_id": <int> }
-        """
         u = request.current_user
         data = request.get_json()
         if not data:
@@ -396,24 +308,6 @@ def create_app():
     @app.route("/api/files/<int:file_id>", methods=["GET"])
     @require_auth
     def download_file(file_id):
-        """
-        Download an encrypted file (ciphertext + wrapped FEK for this user).
-
-        ACL enforced: user must have at least read permission.
-        Only the requesting user's wrapped FEK is returned — never another user's.
-
-        Response 200:
-            {
-              "file_id":         <int>,
-              "filename":        <str>,
-              "ciphertext":      <base64 str>,
-              "nonce_iv":        <base64 str>,
-              "auth_tag":        <base64 str>,
-              "wrapped_fek":     <base64 str>,   # sealed for THIS user
-              "fek_version":     <int>,
-              "permission_type": "read" | "write"
-            }
-        """
         u = request.current_user
 
         file_obj = File.query.get(file_id)
@@ -445,21 +339,6 @@ def create_app():
     @app.route("/api/files/<int:file_id>", methods=["PUT"])
     @require_auth
     def update_file(file_id):
-        """
-        Overwrite an encrypted file's ciphertext (modify flow).
-
-        The client re-encrypts the plaintext with the SAME FEK but a NEW nonce,
-        then sends the new ciphertext here.
-        ACL enforced: user must have write permission.
-
-        Request JSON:
-            ciphertext  (str) - base64-encoded new ciphertext
-            nonce_iv    (str) - base64-encoded new 12-byte nonce
-            auth_tag    (str) - base64-encoded new 16-byte GCM auth tag
-
-        Response 200:
-            { "message": "File updated" }
-        """
         u = request.current_user
         data = request.get_json()
         if not data:
@@ -501,21 +380,6 @@ def create_app():
     @app.route("/api/files/<int:file_id>/permissions", methods=["GET"])
     @require_auth
     def get_permissions(file_id):
-        """
-        List all users who have access to a file, and their permission level.
-        Only the file owner can call this.
-
-        Response 200:
-            [
-              {
-                "user_id":         <int>,
-                "username":        <str>,
-                "permission_type": "read" | "write",
-                "is_owner":        <bool>
-              },
-              ...
-            ]
-        """
         u = request.current_user
 
         file_obj = File.query.get(file_id)
@@ -541,22 +405,6 @@ def create_app():
     @app.route("/api/files/<int:file_id>/share", methods=["POST"])
     @require_auth
     def share_file(file_id):
-        """
-        Grant or update a user's access to a file.
-        Only the file owner can call this.
-
-        The owner must wrap the FEK with the recipient's public key client-side
-        (sealed box) before calling this endpoint.
-
-        Request JSON:
-            target_user_id   (int)  - user to grant access to
-            permission_type  (str)  - "read" | "write"
-            wrapped_fek      (str)  - base64-encoded FEK wrapped with recipient's public key
-            fek_version      (int)  - optional, defaults to current file fek_version
-
-        Response 200:
-            { "message": "Access granted", "target_user_id": <int> }
-        """
         u = request.current_user
         data = request.get_json()
         if not data:
@@ -619,35 +467,6 @@ def create_app():
     @app.route("/api/files/<int:file_id>/revoke", methods=["POST"])
     @require_auth
     def revoke_user(file_id):
-        """
-        Revoke a user's access and rekey the file (full rekey policy).
-
-        Because a revoked user previously held the FEK, the file MUST be
-        re-encrypted with a brand-new FEK. The owner:
-          1. Downloads + decrypts the file client-side.
-          2. Generates a new FEK and re-encrypts.
-          3. Wraps the new FEK for every remaining authorised user.
-          4. Calls this endpoint with the new ciphertext and remaining wrapped keys.
-
-        The owner cannot revoke themselves.
-
-        Request JSON:
-            revoked_user_id  (int)   - user to remove
-            new_ciphertext   (str)   - base64 re-encrypted ciphertext
-            new_nonce_iv     (str)   - base64 new 12-byte nonce
-            new_auth_tag     (str)   - base64 new 16-byte GCM auth tag
-            fek_version      (int)   - optional, auto-incremented if omitted
-            remaining_users  (list)  - [
-                {
-                  "user_id":    <int>,
-                  "wrapped_fek": <base64 str>  # new FEK wrapped for this user
-                },
-                ...
-              ]
-
-        Response 200:
-            { "message": "Rekey complete, user revoked" }
-        """
         u = request.current_user
         data = request.get_json()
         if not data:
@@ -721,13 +540,6 @@ def create_app():
     @app.route("/api/files/<int:file_id>", methods=["DELETE"])
     @require_auth
     def delete_file(file_id):
-        """
-        Delete a file and all associated permissions / wrapped keys.
-        Only the file owner can delete.
-
-        Response 200:
-            { "message": "File deleted" }
-        """
         u = request.current_user
 
         file_obj = File.query.get(file_id)
