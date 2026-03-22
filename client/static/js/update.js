@@ -41,52 +41,126 @@ async function updateFile(fileId, inputEl) {
     }
 }
 
-// share file - add user access to exsiting file
+// ── Unified access-management modal ──────────────────────────────────────────
 
-async function shareFile(fileId) {
-    const target = prompt("Share file with username:");
-    if (!target) return;
+let _accessFileId = null;
 
-    const perm = prompt("Permission (read/write):", "read");
-    if (!perm || !["read", "write"].includes(perm)) {
-        alert("Permission must be read or write.");
+function openAccessModal(fileId) {
+    _accessFileId = fileId;
+    document.getElementById("access-new-user").value = "";
+    document.getElementById("access-new-perm").value = "read";
+    setAccessStatus("");
+    document.getElementById("access-modal-overlay").classList.add("open");
+    loadAccessList();
+}
+
+function closeAccessModal() {
+    document.getElementById("access-modal-overlay").classList.remove("open");
+    _accessFileId = null;
+}
+
+// Close modal when clicking outside
+document.addEventListener("click", function(e) {
+    const overlay = document.getElementById("access-modal-overlay");
+    if (overlay && e.target === overlay) closeAccessModal();
+});
+
+async function loadAccessList() {
+    const list = document.getElementById("access-user-list");
+    list.innerHTML = '<div class="access-row" id="access-loading">Loading&hellip;</div>';
+
+    const resp = await fetch(`/file_permissions/${_accessFileId}`);
+    if (!resp.ok) {
+        list.innerHTML = '<div class="access-row" style="color:#d93025;">Failed to load permissions.</div>';
         return;
     }
 
-    const resp = await fetch(`/share/${fileId}`, {
+    const perms = await resp.json();
+    if (!perms.length) {
+        list.innerHTML = '<div class="access-row">No users with access.</div>';
+        return;
+    }
+
+    list.innerHTML = "";
+    perms.forEach(p => {
+        const row = document.createElement("div");
+        row.className = "access-row";
+        row.dataset.userId = p.user_id;
+
+        const badgeClass = p.is_owner ? "owner" : p.permission_type;
+        const badgeLabel = p.is_owner ? "owner" : p.permission_type;
+
+        let revokeBtn = "";
+        if (!p.is_owner) {
+            revokeBtn = `<button class="revoke-btn" onclick="submitRevoke('${p.username}', this)">
+                           <i class="fa-solid fa-user-slash"></i> Revoke
+                         </button>`;
+        }
+
+        row.innerHTML = `
+            <div class="access-info">
+                <i class="fa-solid fa-user"></i>
+                <span>${p.username}</span>
+                <span class="access-badge ${badgeClass}">${badgeLabel}</span>
+            </div>
+            ${revokeBtn}`;
+        list.appendChild(row);
+    });
+}
+
+function setAccessStatus(msg, isError = true) {
+    const el = document.getElementById("access-status");
+    el.textContent = msg;
+    el.style.color = isError ? "#d93025" : "#1e8e3e";
+}
+
+async function submitShare() {
+    const target = document.getElementById("access-new-user").value.trim();
+    const perm   = document.getElementById("access-new-perm").value;
+    const btn    = document.getElementById("access-share-btn");
+
+    if (!target) { setAccessStatus("Please enter a username."); return; }
+
+    btn.disabled = true;
+    setAccessStatus("");
+
+    const resp = await fetch(`/share/${_accessFileId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ target_username: target, permission_type: perm }),
     });
 
+    btn.disabled = false;
+
     if (resp.ok) {
-        const json = await resp.json();
-        alert(json.message || "Shared successfully");
-        window.location.reload();
+        document.getElementById("access-new-user").value = "";
+        setAccessStatus("Shared successfully.", false);
+        await loadAccessList();
     } else {
         const err = await resp.json();
-        alert("Share failed: " + (err.error || "Unknown error"));
+        setAccessStatus("Share failed: " + (err.error || "Unknown error"));
     }
 }
 
-// revoke file access from a user
-async function revokeUser(fileId) {
-    const target = prompt("Revoke access from username:");
-    if (!target) return;
+async function submitRevoke(targetUsername, btnEl) {
+    if (!confirm(`Revoke access for "${targetUsername}"?`)) return;
 
-    const resp = await fetch(`/revoke/${fileId}`, {
+    btnEl.disabled = true;
+    setAccessStatus("");
+
+    const resp = await fetch(`/revoke/${_accessFileId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ target_username: target }),
+        body: JSON.stringify({ target_username: targetUsername }),
     });
 
     if (resp.ok) {
-        const json = await resp.json();
-        alert(json.message || "Revoked successfully");
-        window.location.reload();
+        setAccessStatus(`Access revoked for "${targetUsername}".`, false);
+        await loadAccessList();
     } else {
+        btnEl.disabled = false;
         const err = await resp.json();
-        alert("Revoke failed: " + (err.error || "Unknown error"));
+        setAccessStatus("Revoke failed: " + (err.error || "Unknown error"));
     }
 }
 

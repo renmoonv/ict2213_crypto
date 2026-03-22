@@ -6,7 +6,6 @@ import sys
 import time
 import subprocess
 import requests
-from api import list_files_api, upload_file_api, download_file_api, delete_file_api
 import mimetypes
 import base64
 from api import (
@@ -21,9 +20,6 @@ from api import (
     get_user_public_key_api,
     revoke_file_api,
 )
-import mimetypes
-import base64
-from api import list_files_api, upload_file_api, download_file_api, delete_file_api, read_file_api, modify_file_api
 from auth import (
     register as do_register,
     login as do_login,
@@ -76,27 +72,21 @@ def _ensure_backend_running():
 
     print("Backend auto-start attempted, but API health is still not ready.")
 
-@app.get("/")
-def landingpage():
-    logged_in = session.get("logged_in", False)
-    return render_template("landingpage.html", logged_in=logged_in)
-
+@app.route("/")
 @app.route("/home")
 def home():
     if not session.get("logged_in"):
-        flash("Please login first.", "error")
-        return redirect(url_for("login"))
+        return render_template("home.html", logged_in=False)
 
     auth_context = get_auth_context()
     if not auth_context:
-        flash("Authenticated session not available. Please login again.", "error")
-        return redirect(url_for("login"))
+        return render_template("home.html", logged_in=False)
 
     username = session.get("username")
     has_privkey =  get_private_key_bytes() is not None
     uploaded_files = list_files_api(auth_context["username"], auth_context["password"]) or []
     uploaded_files = sorted(uploaded_files, key=lambda item: item.get("filename", "").lower())
-    return render_template("home.html", username=username, has_privkey=has_privkey, uploaded_files=uploaded_files)
+    return render_template("home.html", logged_in=True, username=username, has_privkey=has_privkey, uploaded_files=uploaded_files)
 
 @app.route("/logout", methods=["POST", "GET"])
 def logout():
@@ -200,7 +190,7 @@ def upload_file():
             flash("Upload failed. Check that the API server is running and OFFLINE_DEV is disabled.", "error")
             return redirect(url_for("home"))
 
-        flash(f"Encrypted '{safe_name}' on the client and stored ciphertext on the server.", "success")
+        flash(f"'{safe_name}' uploaded successfully.", "success")
         return redirect(url_for("home"))
 
 # Download and decrypt file route
@@ -254,13 +244,22 @@ def remove_file(file_id):
         return redirect(url_for("home"))
 
     flash("File removed successfully.", "success")
-    return redirect(url_for("home")) 
+    return redirect(url_for("home"))
 
-def read_file(file_id, private_key_bytes):
+@app.route("/file_permissions/<int:file_id>", methods=["GET"])
+def file_permissions(file_id):
+    if not session.get("logged_in"):
+        return jsonify({"error": "Please login first."}), 401
+
     auth_context = get_auth_context()
     if not auth_context:
-        flash("Authenticated session not available. Please login again.", "error")
-        return redirect(url_for("login"))
+        return jsonify({"error": "Authenticated session not available. Please login again."}), 401
+
+    perms = get_file_permissions_api(auth_context["username"], auth_context["password"], file_id)
+    if perms is None:
+        return jsonify({"error": "Failed to fetch permissions"}), 500
+
+    return jsonify(perms), 200
 
 @app.route("/share/<int:file_id>", methods=["POST"])
 def share_file(file_id):
@@ -528,12 +527,6 @@ def modify_file(file_id, new_content_bytes, fek):
 
     # re-encrypt with same FEK
     _, new_nonce_iv, new_ciphertext, new_auth_tag = encrypt_file_bytes(new_content_bytes, fek)
-
-    data = {
-        "ciphertext": base64.b64encode(new_ciphertext).decode(),
-        "nonce_iv": base64.b64encode(new_nonce_iv).decode(),
-        "auth_tag": base64.b64encode(new_auth_tag).decode()
-    }
 
     payload = {
         "ciphertext": base64.b64encode(new_ciphertext).decode(),
